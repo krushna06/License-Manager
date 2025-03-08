@@ -10,20 +10,29 @@ module.exports = (db) => {
             return res.status(400).json({ status: 'error', message: 'Missing licenseId or hwid.' });
         }
 
-        db.run(`UPDATE licenses SET hwid = ? WHERE id = ?`, [hwid, licenseId], function(err) {
+        db.get(`SELECT hwid FROM licenses WHERE id = ?`, [licenseId], (err, row) => {
             if (err) {
                 console.error(err);
                 return res.status(500).json({ status: 'error', message: 'Database error.' });
             }
 
-            if (this.changes === 0) {
-                return res.status(404).json({ status: 'error', message: 'License not found or unable to update HWID.' });
+            if (!row) {
+                return res.status(404).json({ status: 'error', message: 'License not found.' });
             }
 
-            res.json({
-                status: 'success',
-                message: 'HWID successfully updated.'
-            });
+            if (row.hwid === null) {
+                db.run(`UPDATE licenses SET hwid = ? WHERE id = ?`, [hwid, licenseId], function(err) {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({ status: 'error', message: 'Failed to update HWID.' });
+                    }
+                    return res.json({ status: 'success', message: 'HWID successfully updated.' });
+                });
+            } else if (row.hwid !== hwid) {
+                return res.status(403).json({ status: 'error', message: 'Not the same pc' });
+            } else {
+                return res.json({ status: 'success', message: 'HWID verified successfully.' });
+            }
         });
     });
 
