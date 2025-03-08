@@ -17,12 +17,15 @@ module.exports = {
         const expiryInput = interaction.options.getString('expiry');
 
         const parseTime = (input) => {
-            if (input === 'current_time') return Math.floor(Date.now() / 1000);
+            const now = new Date();
+            now.setHours(now.getHours() + 5);
+            now.setMinutes(now.getMinutes() + 30);
+
+            if (input === 'current_time') return Math.floor(now.getTime() / 1000);
             if (/^\d{2}\/\d{2}\/\d{4}$/.test(input)) {
                 return Math.floor(new Date(input.split('/').reverse().join('-')).getTime() / 1000);
             }
             if (/^\d{2}\/\d{2}$/.test(input)) {
-                const now = new Date();
                 const [hour, minute] = input.split('/').map(Number);
                 now.setHours(hour, minute, 0, 0);
                 return Math.floor(now.getTime() / 1000);
@@ -32,6 +35,12 @@ module.exports = {
                 const [day, month, year] = date.split('/').map(Number);
                 const [hour, minute] = time.split('/').map(Number);
                 return Math.floor(new Date(year, month - 1, day, hour, minute).getTime() / 1000);
+            }
+            if (/^\d+MM$/.test(input)) {
+                return Math.floor(now.getTime() / 1000) + parseInt(input.replace('MM', '')) * 60;
+            }
+            if (/^\d+H$/.test(input)) {
+                return Math.floor(now.getTime() / 1000) + parseInt(input.replace('H', '')) * 3600;
             }
             return null;
         };
