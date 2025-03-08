@@ -13,12 +13,31 @@ module.exports = {
     async execute(interaction, db) {
         const productName = interaction.options.getString('product_name');
         const username = interaction.options.getString('username');
-        const start = interaction.options.getString('start') === 'current_time' 
-            ? Math.floor(Date.now() / 1000) 
-            : interaction.options.getString('start');
-        const expiry = interaction.options.getString('expiry') === 'NA' 
-            ? 'NA' 
-            : Math.floor(new Date(interaction.options.getString('expiry')).getTime() / 1000);
+        const startInput = interaction.options.getString('start');
+        const expiryInput = interaction.options.getString('expiry');
+
+        const parseTime = (input) => {
+            if (input === 'current_time') return Math.floor(Date.now() / 1000);
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(input)) {
+                return Math.floor(new Date(input.split('/').reverse().join('-')).getTime() / 1000);
+            }
+            if (/^\d{2}\/\d{2}$/.test(input)) {
+                const now = new Date();
+                const [hour, minute] = input.split('/').map(Number);
+                now.setHours(hour, minute, 0, 0);
+                return Math.floor(now.getTime() / 1000);
+            }
+            if (/^\d{2}\/\d{2}\/\d{4} \d{2}\/\d{2}$/.test(input)) {
+                const [date, time] = input.split(' ');
+                const [day, month, year] = date.split('/').map(Number);
+                const [hour, minute] = time.split('/').map(Number);
+                return Math.floor(new Date(year, month - 1, day, hour, minute).getTime() / 1000);
+            }
+            return null;
+        };
+
+        const start = parseTime(startInput) || 'NA';
+        const expiry = parseTime(expiryInput) || 'NA';
 
         const licenseId = crypto.randomUUID();
 
@@ -37,7 +56,7 @@ module.exports = {
                         { name: 'License ID', value: licenseId, inline: true },
                         { name: 'Product Name', value: productName, inline: true },
                         { name: 'Username', value: username, inline: true },
-                        { name: 'Start Time', value: `<t:${start}:F>`, inline: true },
+                        { name: 'Start Time', value: start === 'NA' ? 'NA' : `<t:${start}:F>`, inline: true },
                         { name: 'Expiry Time', value: expiry === 'NA' ? 'NA' : `<t:${expiry}:F>`, inline: true },
                         { name: 'Status', value: 'Active', inline: true }
                     )
