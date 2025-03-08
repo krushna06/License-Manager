@@ -16,7 +16,8 @@ db.run(`CREATE TABLE IF NOT EXISTS licenses (
     username TEXT,
     start_time TEXT,
     expiry_time TEXT,
-    status TEXT
+    status TEXT,
+    hwid TEXT
 )`);
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -68,27 +69,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+const licenseRoutes = require('./api/endpoints/licenseRoutes')(db);
+const hwidRoutes = require('./api/endpoints/hwidRoute')(db);
 
-app.get('/api/license/:licenseId', (req, res) => {
-    const { licenseId } = req.params;
-    console.log(`[API Request] Received request for License ID: ${licenseId}`);
-
-    db.get(`SELECT * FROM licenses WHERE id = ? AND status = 'active'`, [licenseId], (err, row) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ status: 'error', message: 'Database error.' });
-        }
-
-        if (!row) {
-            return res.status(404).json({ status: 'error', message: 'License not found or is inactive/suspended.' });
-        }
-
-        res.json({
-            status: 'success',
-            license: row
-        });
-    });
-});
+app.use('/api/license', licenseRoutes);
+app.use('/api/hwid', hwidRoutes);
 
 app.listen(PORT, () => {
     console.log(`API running on port ${PORT}`);
