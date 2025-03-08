@@ -1,4 +1,3 @@
-// index.js
 const { Client, GatewayIntentBits, Collection, REST, Routes } = require('discord.js');
 const express = require('express');
 const fs = require('fs');
@@ -19,7 +18,6 @@ db.run(`CREATE TABLE IF NOT EXISTS licenses (
     expiry_time TEXT,
     status TEXT
 )`);
-
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
@@ -73,6 +71,7 @@ app.use(express.json());
 
 app.get('/api/license/:licenseId', (req, res) => {
     const { licenseId } = req.params;
+    console.log(`[API Request] Received request for License ID: ${licenseId}`);
 
     db.get(`SELECT * FROM licenses WHERE id = ? AND status = 'active'`, [licenseId], (err, row) => {
         if (err) {
